@@ -6,9 +6,9 @@ let monthlyData = [];
 ========================= */
 async function loadData() {
     try {
-        depositData = await fetch("deposit.json").then(res => res.json());
-        monthlyData = await fetch("monthly.json").then(res => res.json());
-        console.log("데이터 로딩 완료");
+        depositData = await fetch("deposit.json").then(r => r.json());
+        monthlyData = await fetch("monthly.json").then(r => r.json());
+        console.log("데이터 로딩 완료", depositData.length, monthlyData.length);
     } catch (e) {
         console.error("데이터 로딩 실패:", e);
     }
@@ -17,20 +17,29 @@ async function loadData() {
 loadData();
 
 /* =========================
-   2. 데이터 선택 함수
+   2. 안전 숫자 변환
+========================= */
+function safeNumber(value, defaultValue = 999999) {
+    const n = Number(value);
+    return isNaN(n) ? defaultValue : n;
+}
+
+/* =========================
+   3. 데이터 선택
 ========================= */
 function getData(type) {
     return type === "전세" ? depositData : monthlyData;
 }
 
 /* =========================
-   3. 추천 함수 (핵심)
+   4. 추천 로직
 ========================= */
 function recommend() {
 
     const type = document.getElementById("type").value;
-    const depositBudget = Number(document.getElementById("deposit").value);
-    const monthlyBudget = Number(document.getElementById("rent").value);
+
+    const depositBudget = safeNumber(document.getElementById("deposit").value);
+    const monthlyBudget = safeNumber(document.getElementById("rent").value);
 
     const priority1 = document.getElementById("priority1").value;
     const priority2 = document.getElementById("priority2").value;
@@ -39,50 +48,59 @@ function recommend() {
     let data = getData(type);
 
     if (!data || data.length === 0) {
-        document.getElementById("result").innerText = "데이터가 없습니다.";
+        document.getElementById("result").innerText = "데이터 없음";
         return;
     }
 
+    console.log("전체 데이터:", data.length);
+
     /* =========================
-       1) 예산 필터링
-    ========================= */
-    if (type === "전세") {
-        data = data.filter(d => d.deposit <= depositBudget);
-    } else {
-        data = data.filter(d =>
-            d.deposit <= depositBudget &&
-            d.rent <= monthlyBudget
-        );
-    }
+       5. 필터 (핵심 안정화)
+    ========================== */
+    data = data.filter(d => {
+
+        const deposit = safeNumber(d["보증금(만원)"]);
+        const rent = safeNumber(d["임대료(만원)"], 0);
+
+        if (type === "전세") {
+            return deposit <= depositBudget;
+        } else {
+            return deposit <= depositBudget && rent <= monthlyBudget;
+        }
+    });
+
+    console.log("필터 후:", data.length);
 
     if (data.length === 0) {
-        document.getElementById("result").innerText = "조건에 맞는 매물이 없습니다.";
+        document.getElementById("result").innerText =
+            "조건에 맞는 매물이 없습니다 (필터 너무 빡셈)";
         return;
     }
 
     /* =========================
-       2) 점수 계산
-    ========================= */
+       6. 점수 계산 (ipynb 변환)
+    ========================== */
     data.forEach(d => {
+
         d.score =
-            (d[priority1] || 0) * 3 +
-            (d[priority2] || 0) * 2 +
-            (d[priority3] || 0) * 1;
+            (safeNumber(d[priority1]) * 3) +
+            (safeNumber(d[priority2]) * 2) +
+            (safeNumber(d[priority3]) * 1);
     });
 
     /* =========================
-       3) 정렬
-    ========================= */
+       7. 정렬
+    ========================== */
     data.sort((a, b) => b.score - a.score);
 
     /* =========================
-       4) TOP 3
-    ========================= */
+       8. TOP 3
+    ========================== */
     const top3 = data.slice(0, 3);
 
     /* =========================
-       5) 출력
-    ========================= */
+       9. 출력
+    ========================== */
     document.getElementById("result").innerText =
         JSON.stringify(top3, null, 2);
 }
