@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>자취방 추천 시스템</title>
+</head>
+<body>
+
+<h2>🏠 서울 자취방 추천</h2>
+
+<!-- 거래 유형 -->
+<select id="type">
+  <option value="전세">전세</option>
+  <option value="월세">월세</option>
+</select>
+
+<br><br>
+
+<!-- 예산 -->
+<input id="deposit" placeholder="보증금 (만원)">
+<input id="rent" placeholder="월세 (만원)">
+
+<br><br>
+
+<!-- 중요도 -->
+<select id="priority1">
+  <option>의료</option>
+  <option>교육</option>
+  <option>쇼핑</option>
+</select>
+
+<select id="priority2">
+  <option>의료</option>
+  <option>교육</option>
+  <option>쇼핑</option>
+</select>
+
+<select id="priority3">
+  <option>의료</option>
+  <option>교육</option>
+  <option>쇼핑</option>
+</select>
+
+<br><br>
+
+<button onclick="recommend()">추천하기</button>
+
+<pre id="result"></pre>
+
+<script src="app.js"></script>
+
+</body>
+</html>
